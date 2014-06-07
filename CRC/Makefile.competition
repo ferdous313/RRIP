@@ -2,7 +2,7 @@
 ## PIN tools
 ##
 
-default: CMPsim32
+default: CMPsim64
 
 ##############################################################
 #
@@ -69,7 +69,7 @@ CMPsim32:  clean cacheobjs
 	$(LINKER) -Wl,-u,main $(PIN_SALDFLAGS) $(LINK_DEBUG) ${LINK_OUT}bin/CMPsim.usetrace.32 ./bin/libCMPsim.32.a $(LLC_OBJS) ${PIN_LPATHS} $(SAPIN_LIBS) /usr/lib/libz.a 
 
 CMPsim64:  clean cacheobjs 
-	$(LINKER) -Wl,-u,main $(PIN_SALDFLAGS) $(LINK_DEBUG) ${LINK_OUT}bin/CMPsim.usetrace.64 ./bin/libCMPsim.64.a $(LLC_OBJS) ${PIN_LPATHS} $(SAPIN_LIBS) /usr/lib64/libz.a 
+	$(LINKER) -Wl,-u,main $(PIN_SALDFLAGS) $(LINK_DEBUG) ${LINK_OUT}bin/CMPsim.usetrace.64 ./bin/libCMPsim.64.a $(LLC_OBJS) ${PIN_LPATHS} $(SAPIN_LIBS) /usr/lib/libz.a 
 
 ## cleaning
 clean:
