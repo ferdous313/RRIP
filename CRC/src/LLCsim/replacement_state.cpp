@@ -69,6 +69,17 @@ void CACHE_REPLACEMENT_STATE::InitReplacementState()
     }
 
     // Contestants:  ADD INITIALIZATION FOR YOUR HARDWARE HERE
+    for(UINT32 setIndex=0; setIndex<numsets; setIndex++) 
+    {
+        repl[ setIndex ]  = new LINE_REPLACEMENT_STATE[ assoc ];
+
+        for(UINT32 way=0; way<assoc; way++) 
+        {
+            // initialize RRPV as 3
+            repl[ setIndex ][ way ].RRPV = 3;
+        }
+    }
+
 
 }
 
@@ -102,6 +113,7 @@ INT32 CACHE_REPLACEMENT_STATE::GetVictimInSet( UINT32 tid, UINT32 setIndex, cons
     else if( replPolicy == CRC_REPL_CONTESTANT )
     {
         // Contestants:  ADD YOUR VICTIM SELECTION FUNCTION HERE
+        return Get_RRIP_Victim( setIndex );
     }
 
     // We should never get here
@@ -138,6 +150,7 @@ void CACHE_REPLACEMENT_STATE::UpdateReplacementState(
         // Contestants:  ADD YOUR UPDATE REPLACEMENT STATE FUNCTION HERE
         // Feel free to use any of the input parameters to make
         // updates to your replacement policy
+        UpdateRRIP( setIndex, updateWayID, cacheHit );
     }
     
     
@@ -192,6 +205,40 @@ INT32 CACHE_REPLACEMENT_STATE::Get_Random_Victim( UINT32 setIndex )
 
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
+// This function finds a RRIP victim in the cache set                       //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+INT32 CACHE_REPLACEMENT_STATE::Get_RRIP_Victim( UINT32 setIndex )
+{
+    // Get pointer to replacement state of current set
+    LINE_REPLACEMENT_STATE *replSet = repl[ setIndex ];
+
+    INT32   rripWay   = 0;
+
+    while(true)
+    {
+        // Search for victim whose RRPV is 3 at first
+        for(UINT32 way=0; way<assoc; way++) 
+        {
+            if( replSet[way].RRPV == 3 ) 
+            {
+                rripWay = way;
+                return rripWay;
+            }
+        }
+        // if no 3, increment all RRPVs
+        for(UINT32 way=0; way<assoc; way++) 
+        {
+            replSet[way].RRPV ++;
+        }
+    }
+
+    // return rrip way
+    return rripWay;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
 // This function implements the LRU update routine for the traditional        //
 // LRU replacement policy. The arguments to the function are the physical     //
 // way and set index.                                                         //
@@ -214,6 +261,22 @@ void CACHE_REPLACEMENT_STATE::UpdateLRU( UINT32 setIndex, INT32 updateWayID )
 
     // Set the LRU stack position of new line to be zero
     repl[ setIndex ][ updateWayID ].LRUstackposition = 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// This function implements the RRIP update routine.                          //
+// The arguments to the function are the physical way and set index and hit.  //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+void CACHE_REPLACEMENT_STATE::UpdateRRIP( UINT32 setIndex, INT32 updateWayID, bool cacheHit )
+{
+    if(cacheHit){
+        repl[ setIndex ][ updateWayID ].RRPV = 0;
+    }else{
+        repl[ setIndex ][ updateWayID ].RRPV = 2;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

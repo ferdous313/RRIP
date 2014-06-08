@@ -35,6 +35,7 @@ typedef struct
     UINT32  LRUstackposition;
 
     // CONTESTANTS: Add extra state per cache line here
+    UINT32  RRPV;
 
 } LINE_REPLACEMENT_STATE;
 
@@ -76,7 +77,9 @@ class CACHE_REPLACEMENT_STATE
     INT32  Get_Random_Victim( UINT32 setIndex );
 
     INT32  Get_LRU_Victim( UINT32 setIndex );
+    INT32  Get_RRIP_Victim( UINT32 setIndex );
     void   UpdateLRU( UINT32 setIndex, INT32 updateWayID );
+    void   UpdateRRIP( UINT32 setIndex, INT32 updateWayID, bool cacheHit );
 };
 
 
