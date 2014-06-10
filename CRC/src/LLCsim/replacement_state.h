@@ -26,7 +26,8 @@ typedef enum
 {
     CRC_REPL_LRU        = 0,
     CRC_REPL_RANDOM     = 1,
-    CRC_REPL_CONTESTANT = 2
+    CRC_REPL_CONTESTANT = 2,
+    CRC_REPL_OWNIDEA = 3
 } ReplacemntPolicy;
 
 // Replacement State Per Cache Line
@@ -36,6 +37,8 @@ typedef struct
 
     // CONTESTANTS: Add extra state per cache line here
     UINT32  RRPV;
+
+    UINT32  ownRRI;
 
 } LINE_REPLACEMENT_STATE;
 
@@ -78,8 +81,10 @@ class CACHE_REPLACEMENT_STATE
 
     INT32  Get_LRU_Victim( UINT32 setIndex );
     INT32  Get_RRIP_Victim( UINT32 setIndex );
+    INT32  Get_OwnIdea_Victim( UINT32 setIndex );
     void   UpdateLRU( UINT32 setIndex, INT32 updateWayID );
     void   UpdateRRIP( UINT32 setIndex, INT32 updateWayID, bool cacheHit );
+    void   UpdateOwnIdea( UINT32 setIndex, INT32 updateWayID, bool cacheHit );
 };
 
 

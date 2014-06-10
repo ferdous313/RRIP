@@ -69,6 +69,7 @@ void CACHE_REPLACEMENT_STATE::InitReplacementState()
     }
 
     // Contestants:  ADD INITIALIZATION FOR YOUR HARDWARE HERE
+    // RRIP
     for(UINT32 setIndex=0; setIndex<numsets; setIndex++) 
     {
         repl[ setIndex ]  = new LINE_REPLACEMENT_STATE[ assoc ];
@@ -77,6 +78,18 @@ void CACHE_REPLACEMENT_STATE::InitReplacementState()
         {
             // initialize RRPV as 3
             repl[ setIndex ][ way ].RRPV = 3;
+        }
+    }
+
+    // Own Idea
+    for(UINT32 setIndex=0; setIndex<numsets; setIndex++) 
+    {
+        repl[ setIndex ]  = new LINE_REPLACEMENT_STATE[ assoc ];
+
+        for(UINT32 way=0; way<assoc; way++) 
+        {
+            // initialize RRPV as assoc 
+            repl[ setIndex ][ way ].ownRRI = assoc;
         }
     }
 
@@ -115,6 +128,10 @@ INT32 CACHE_REPLACEMENT_STATE::GetVictimInSet( UINT32 tid, UINT32 setIndex, cons
         // Contestants:  ADD YOUR VICTIM SELECTION FUNCTION HERE
         return Get_RRIP_Victim( setIndex );
     }
+    else if( replPolicy == CRC_REPL_OWNIDEA )
+    {
+        return Get_OwnIdea_Victim( setIndex );
+    }
 
     // We should never get here
     assert(0);
@@ -151,6 +168,11 @@ void CACHE_REPLACEMENT_STATE::UpdateReplacementState(
         // Feel free to use any of the input parameters to make
         // updates to your replacement policy
         UpdateRRIP( setIndex, updateWayID, cacheHit );
+    }
+    else if( replPolicy == CRC_REPL_CONTESTANT )
+    {
+        UpdateLRU( setIndex, updateWayID );
+        UpdateOwnIdea( setIndex, updateWayID, cacheHit );
     }
     
     
@@ -237,6 +259,35 @@ INT32 CACHE_REPLACEMENT_STATE::Get_RRIP_Victim( UINT32 setIndex )
     return rripWay;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// This function finds a OwnIdea victim in the cache set                      //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+INT32 CACHE_REPLACEMENT_STATE::Get_OwnIdea_Victim( UINT32 setIndex )
+{
+    // Get pointer to replacement state of current set
+    LINE_REPLACEMENT_STATE *replSet = repl[ setIndex ];
+
+    INT32   ownWay   = 0;
+
+    UINT32 maxRRI_LRU = 0;
+
+    // Search for victim whose RRI+LRU is maximum 
+    for(UINT32 way=0; way<assoc; way++) 
+    {
+        if( replSet[way].ownRRI + replSet[way].LRUstackposition > maxRRI_LRU ) 
+        {
+            ownWay = way;
+            maxRRI_LRU = replSet[way].ownRRI + replSet[way].LRUstackposition;
+        }
+    }
+
+    // return rrip way
+    return ownWay;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 // This function implements the LRU update routine for the traditional        //
@@ -277,6 +328,39 @@ void CACHE_REPLACEMENT_STATE::UpdateRRIP( UINT32 setIndex, INT32 updateWayID, bo
     }else{
         repl[ setIndex ][ updateWayID ].RRPV = 2;
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// This function implements the RRIP update routine.                          //
+// The arguments to the function are the physical way and set index and hit.  //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+void CACHE_REPLACEMENT_STATE::UpdateOwnIdea( UINT32 setIndex, INT32 updateWayID, bool cacheHit )
+{
+    // Determine current LRU stack position
+    UINT32 currLRUstackposition = repl[ setIndex ][ updateWayID ].LRUstackposition;
+
+    // Update the stack position of all lines before the current line
+    // Update implies incremeting their stack positions by one
+    for(UINT32 way=0; way<assoc; way++) 
+    {
+        if( repl[setIndex][way].LRUstackposition < currLRUstackposition ) 
+        {
+            repl[setIndex][way].LRUstackposition++;
+        }
+    }
+
+    // Update RRI, change in stack position. assoc as maximum
+    if(cacheHit){
+        repl[ setIndex ][ updateWayID ].ownRRI = currLRUstackposition;
+    }else{
+        repl[ setIndex ][ updateWayID ].RRPV = assoc;
+    }
+
+    // Set the LRU stack position of new line to be zero
+    repl[ setIndex ][ updateWayID ].LRUstackposition = 0;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
